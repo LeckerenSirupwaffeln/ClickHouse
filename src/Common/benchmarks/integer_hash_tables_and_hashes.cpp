@@ -28,7 +28,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wused-but-marked-unused"
-#include <xxhash.h>
+#include <xxHash/xxhash.h>
 
 using Key = UInt64;
 using Value = UInt64;

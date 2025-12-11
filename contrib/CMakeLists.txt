@@ -152,6 +152,7 @@ add_contrib (isa-l-cmake isa-l)
 add_contrib (libhdfs3-cmake libhdfs3) # requires: google-protobuf, krb5, isa-l
 add_contrib (hive-metastore-cmake hive-metastore) # requires: thrift, avro, arrow, libhdfs3
 add_contrib (cppkafka-cmake cppkafka)
+add_contrib (xxHash-cmake)
 
 option(ENABLE_LIBPQXX "Enable PostgreSQL" ${ENABLE_LIBRARIES})
 if (ENABLE_LIBPQXX)
@@ -241,8 +242,6 @@ if (ENABLE_USEARCH)
 else ()
     message(STATUS "Not using USearch")
 endif ()
-
-add_contrib (xxHash-cmake xxHash)
 
 add_contrib (libbcrypt-cmake libbcrypt)
 

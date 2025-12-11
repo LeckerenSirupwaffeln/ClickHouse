@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-#include <Common/SipHash.h>
+#include <Common/HashState128.h>
 
 #include <IO/WriteBuffer.h>
 #include <IO/WriteHelpers.h>
@@ -11,6 +11,15 @@
 #include <Parsers/ASTWithAlias.h>
 
 #include <boost/functional/hash.hpp>
+
+/// REMOVE LATER
+#include <chrono>
+#include <iostream>
+#include <fstream>
+#include <ios>
+static unsigned int called_X_times = 0;
+static unsigned int called_Z_times = 0;
+static std::chrono::duration<double> total_duration {0};
 
 namespace DB
 {
@@ -177,7 +186,16 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
       * For weak nodes there is special handling. If we visit weak node first time we update hash state with weak node content and register
       * identifier for this node, for subsequent visits of this weak node we hash weak node identifier instead of content.
       */
-    HashState hash_state;
+
+    /// REMOVE LATER
+    std::ofstream file;
+    file.open("log1.txt", std::ios::app);
+    auto start = std::chrono::system_clock::now();
+    ++called_Z_times;
+    file << "called getTreeHash() at: " << start << " time\n";
+    file << "called getTreeHash(): " << called_Z_times << " times\n";
+
+    HashState128 hash_state;
 
     std::unordered_map<const IQueryTreeNode *, size_t> weak_node_to_identifier;
 
@@ -186,6 +204,9 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
 
     while (!nodes_to_process.empty())
     {
+      /// REMOVE LATER
+      ++called_X_times;
+      file << "Processed node within getTreeHash() " << called_X_times << " times\n";
         const auto [node_to_process, is_weak_node] = nodes_to_process.back();
         nodes_to_process.pop_back();
 
@@ -208,7 +229,7 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
             hash_state.update(node_to_process->alias);
         }
 
-        node_to_process->updateTreeHashImpl(hash_state, compare_options);
+        //node_to_process->updateTreeHashImpl(hash_state, compare_options);
 
         hash_state.update(node_to_process->children.size());
 
@@ -232,7 +253,13 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
         }
     }
 
-    return getSipHash128AsPair(hash_state);
+    auto end = std::chrono::system_clock::now();
+    auto duration = end - start;
+    file << "finished getTreeHash() at: " << end << " time\n";
+    file << "Duration of this getTreeHash(): " << duration << '\n';
+    total_duration += duration;
+    file << "Total duration of all getTreeHash() calls: " << total_duration << '\n';
+    return hash_state.get128();
 }
 
 QueryTreeNodePtr IQueryTreeNode::clone() const

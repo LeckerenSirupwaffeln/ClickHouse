@@ -32,6 +32,12 @@
 #include <Interpreters/Context.h>
 #include <Interpreters/QueryLog.h>
 
+/// REMOVE LATER
+#include <iostream>
+#include <fstream>
+#include <ios>
+static unsigned int called_M_times = 0;
+
 namespace DB
 {
 
@@ -150,6 +156,10 @@ static QueryTreeNodePtr buildQueryTreeAndRunPasses(const ASTPtr & query,
     const ContextPtr & context,
     const StoragePtr & storage)
 {
+    std::ofstream file;
+    file.open("log1.txt", std::ios::app);
+    ++called_M_times;
+    file << "Called buildQueryTreeAndRunPasses()" << called_M_times << " times\n";
     auto query_tree = buildQueryTree(query, context);
 
     QueryTreePassManager query_tree_pass_manager(context);

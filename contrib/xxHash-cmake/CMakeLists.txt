@@ -1,6 +1,6 @@
 set (LIBRARY_DIR "${ClickHouse_SOURCE_DIR}/contrib/xxHash")
 set (SRCS
-    "${LIBRARY_DIR}/xxhash.c"
+    "${LIBRARY_DIR}/xxHash/xxhash.c"
 )
 
 add_library(xxHash ${SRCS})
