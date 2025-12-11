@@ -27,7 +27,27 @@ updateHashFast(const ColumnArray& column, HashState128& hash_state)
 
 updateHashFast(const ColumnDecimal& column, HashState128& hash_state)
 {
-  
+  const auto& data = column.getData();
+  updateHashFast(data);
+}
+
+updateHashFast(const ColumnTuple& column, HashState128& hash_state)
+{
+  for (const auto& tuple_column : column.GetColumns())
+  {
+    updateHashFast(tuple_column, hash_state);
+  }
+}
+
+updateHashFast(const ColumnDynamic& column, HashState128& hash_state)
+{
+  updateHashFast(column.getVariantColumn(), hash_state);
+}
+
+updateHashFast(const ColumnVector& column, HashState128& hash_state)
+{
+  const auto& data = column.getData();
+  updateHashFast(data);
 }
 
 }

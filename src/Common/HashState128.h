@@ -45,9 +45,9 @@ public:
       return hash.low64;
     }
 
-    ALWAYS_INLINE void update(const char * data, UInt64 size)
+    ALWAYS_INLINE void update(const char * data, size_t size)
     {
-        const auto first_result = XXH_INLINE_XXH3_128bits(static_cast<const void*>(data), static_cast<size_t>(size));
+        const auto first_result = XXH_INLINE_XXH3_128bits(static_cast<const void*>(data), size);
         /// XOR first result with old hash to get new hash
         hash.high64 ^= first_result.high64;
         hash.low64  ^= first_result.low64;
@@ -77,9 +77,18 @@ public:
     ALWAYS_INLINE void update(const char * s) { update(std::string_view(s)); }
 };
 
+template <typename T>
+updateHashFast(const PaddedPODArray<T>&     array,  HashState128& hash_state)
+{
+  hash_state.update(array.raw_data(), array.size() * sizeof(T));
+}
+
 updateHashFast(const ColumnLowCardinality&  column, HashState128& hash_state);
 updateHashFast(const ColumnLazy&            column, HashState128& hash_state);
 updateHashFast(const ColumnArray&           column, HashState128& hash_state);
 updateHashFast(const ColumnDecimal&         column, HashState128& hash_state);
+updateHashFast(const ColumnTuple&           column, HashState128& hash_state);
+updateHashFast(const ColumnDynamic&         column, HashState128& hash_state);
+updateHashFast(const ColumnVector&          column, HashState128& hash_state);
 
 #pragma clang diagnostic pop
