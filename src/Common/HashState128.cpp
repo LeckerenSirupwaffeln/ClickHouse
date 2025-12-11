@@ -8,6 +8,11 @@ namespace ErrorCodes
     extern const int NOT_IMPLEMENTED;
 }
 
+updateHashFast(const WriteBufferFromOwnString& buffer, HashState128& hash_state)
+{
+  hash_state.update(buffer.str().c_str(), buffer.str().size());
+}
+
 updateHashFast(const ColumnLowCardinality& column, HashState128& hash_state)
 {
   updateHashFast(column.getIndexes(),                       hash_state);
@@ -48,6 +53,21 @@ updateHashFast(const ColumnVector& column, HashState128& hash_state)
 {
   const auto& data = column.getData();
   updateHashFast(data);
+}
+
+updateHashFast(const ColumnAggregateFunction& column, HashState128& hash_state)
+{
+  const auto& func = column.getAggregateFunction();
+  const auto& data = column.getData();
+  WriteBufferFromOwnString wbuf;
+  func->serializeBatch(data, 0, data.size(), wbuf);
+  updateHashFast(wbuf);
+}
+
+updateHashFast(const ColumnString& column, HashState128& hash_state)
+{
+  updateHashFast(column.getOffsets(), hash_state);
+  updateHashFast(column.getChars(),   hash_state);
 }
 
 }

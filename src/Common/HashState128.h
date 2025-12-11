@@ -78,17 +78,20 @@ public:
 };
 
 template <typename T>
-updateHashFast(const PaddedPODArray<T>&     array,  HashState128& hash_state)
+updateHashFast(const PODArrayBase<T>& array, HashState128& hash_state)
 {
   hash_state.update(array.raw_data(), array.size() * sizeof(T));
 }
 
-updateHashFast(const ColumnLowCardinality&  column, HashState128& hash_state);
-updateHashFast(const ColumnLazy&            column, HashState128& hash_state);
-updateHashFast(const ColumnArray&           column, HashState128& hash_state);
-updateHashFast(const ColumnDecimal&         column, HashState128& hash_state);
-updateHashFast(const ColumnTuple&           column, HashState128& hash_state);
-updateHashFast(const ColumnDynamic&         column, HashState128& hash_state);
-updateHashFast(const ColumnVector&          column, HashState128& hash_state);
+updateHashFast(const WriteBufferFromOwnString&  buffer, HashState128& hash_state);
+updateHashFast(const ColumnLowCardinality&      column, HashState128& hash_state);
+updateHashFast(const ColumnLazy&                column, HashState128& hash_state);
+updateHashFast(const ColumnArray&               column, HashState128& hash_state);
+updateHashFast(const ColumnDecimal&             column, HashState128& hash_state);
+updateHashFast(const ColumnTuple&               column, HashState128& hash_state);
+updateHashFast(const ColumnDynamic&             column, HashState128& hash_state);
+updateHashFast(const ColumnVector&              column, HashState128& hash_state);
+updateHashFast(const ColumnAggregateFunction&   column, HashState128& hash_state);
+updateHashFast(const ColumnString&              column, HashState128& hash_state);
 
 #pragma clang diagnostic pop
