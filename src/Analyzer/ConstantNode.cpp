@@ -146,9 +146,9 @@ bool ConstantNode::isEqualImpl(const IQueryTreeNode & rhs, CompareOptions compar
 
 void ConstantNode::updateTreeHashImpl(HashState & hash_state, CompareOptions compare_options) const
 {
-    constant_value.getColumn()->updateHashFast(hash_state);
+    hash_state.update(constant_value.getColumn());
     if (compare_options.compare_types)
-        constant_value.getType()->updateHash(hash_state);
+        hash_state.update(constant_value.getType());
 }
 
 QueryTreeNodePtr ConstantNode::cloneImpl() const

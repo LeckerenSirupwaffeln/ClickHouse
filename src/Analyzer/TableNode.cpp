@@ -92,8 +92,8 @@ void TableNode::updateTreeHashImpl(HashState & state, CompareOptions) const
         state.update(full_name);
     }
 
-    if (table_expression_modifiers)
-        table_expression_modifiers->updateTreeHash(state);
+    if (table_expression_modifiers.has_value())
+        state.update(table_expression_modifiers.value());
 }
 
 QueryTreeNodePtr TableNode::cloneImpl() const

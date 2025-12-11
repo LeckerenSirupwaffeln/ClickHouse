@@ -229,7 +229,7 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
             hash_state.update(node_to_process->alias);
         }
 
-        //node_to_process->updateTreeHashImpl(hash_state, compare_options);
+        node_to_process->updateTreeHashImpl(hash_state, compare_options);
 
         hash_state.update(node_to_process->children.size());
 

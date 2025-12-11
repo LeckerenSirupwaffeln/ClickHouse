@@ -93,5 +93,17 @@ updateHashFast(const ColumnDynamic&             column, HashState128& hash_state
 updateHashFast(const ColumnVector&              column, HashState128& hash_state);
 updateHashFast(const ColumnAggregateFunction&   column, HashState128& hash_state);
 updateHashFast(const ColumnString&              column, HashState128& hash_state);
+updateHashFast(const ColumnReplicated&          column, HashState128& hash_state);
+updateHashFast(const ColumnNullable&            column, HashState128& hash_state);
+updateHashFast(const ColumnObject&              column, HashState128& hash_state);
+updateHashFast(const ColumnSparse&              column, HashState128& hash_state);
+updateHashFast(const ColumnBLOB&                column, HashState128& hash_state);
+updateHashFast(const ColumnConst&               column, HashState128& hash_state);
+updateHashFast(const ColumnQBit&                column, HashState128& hash_state);
+updateHashFast(const ColumnMap&                 column, HashState128& hash_state);
+updateHashFast(const ColumnCompressed&          column, HashState128& hash_state);
+updateHashFast(const ColumnVariant&             column, HashState128& hash_state);
+updateHashFast(const ColumnFixedString&         column, HashState128& hash_state);
+updateHashFast(const ColumnFunction&            column, HashState128& hash_state);
 
 #pragma clang diagnostic pop

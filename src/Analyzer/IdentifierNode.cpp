@@ -49,8 +49,8 @@ void IdentifierNode::updateTreeHashImpl(HashState & state, CompareOptions) const
     state.update(identifier_name.size());
     state.update(identifier_name);
 
-    if (table_expression_modifiers)
-        table_expression_modifiers->updateTreeHash(state);
+    if (table_expression_modifiers.has_value())
+        state.update(table_expression_modifiers.value());
 }
 
 QueryTreeNodePtr IdentifierNode::cloneImpl() const

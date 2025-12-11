@@ -111,8 +111,8 @@ void TableFunctionNode::updateTreeHashImpl(HashState & state, CompareOptions) co
         state.update(full_name);
     }
 
-    if (table_expression_modifiers)
-        table_expression_modifiers->updateTreeHash(state);
+    if (table_expression_modifiers.has_value())
+        state.update(table_expression_modifiers.value());
 
     state.update(settings_changes.size());
     for (const auto & change : settings_changes)
