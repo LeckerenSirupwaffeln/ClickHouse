@@ -1,7 +1,6 @@
 #include <Analyzer/LambdaNode.h>
 
 #include <Common/assert_cast.h>
-#include <Common/SipHash.h>
 
 #include <Parsers/ASTExpressionList.h>
 #include <Parsers/ASTFunction.h>

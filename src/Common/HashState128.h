@@ -16,6 +16,16 @@
 #include <base/hex.h>
 #include <Common/transformEndianness.h>
 
+namespace DB
+{
+
+namespace ErrorCodes
+{
+    extern const int NOT_IMPLEMENTED;
+}
+
+}
+
 class HashState128
 {
 using Hash = CityHash_v1_0_2::uint128;
@@ -66,5 +76,10 @@ public:
     ALWAYS_INLINE void update(const std::string_view x) { update(x.data(), x.size()); }
     ALWAYS_INLINE void update(const char * s) { update(std::string_view(s)); }
 };
+
+updateHashFast(const ColumnLowCardinality&  column, HashState128& hash_state);
+updateHashFast(const ColumnLazy&            column, HashState128& hash_state);
+updateHashFast(const ColumnArray&           column, HashState128& hash_state);
+updateHashFast(const ColumnDecimal&         column, HashState128& hash_state);
 
 #pragma clang diagnostic pop

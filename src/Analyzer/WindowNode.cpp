@@ -2,7 +2,6 @@
 #include <IO/Operators.h>
 #include <IO/WriteBufferFromString.h>
 #include <Parsers/ASTWindowDefinition.h>
-#include <Common/SipHash.h>
 #include <Common/assert_cast.h>
 
 namespace DB
@@ -93,7 +92,6 @@ void WindowNode::updateTreeHashImpl(HashState & hash_state, CompareOptions) cons
     hash_state.update(window_frame.begin_preceding);
     hash_state.update(window_frame.end_type);
     hash_state.update(window_frame.end_preceding);
-
     hash_state.update(parent_window_name);
 }
 

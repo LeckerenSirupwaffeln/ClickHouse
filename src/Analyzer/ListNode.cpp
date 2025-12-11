@@ -1,7 +1,5 @@
 #include <Analyzer/ListNode.h>
 
-#include <Common/SipHash.h>
-
 #include <IO/WriteBuffer.h>
 #include <IO/WriteHelpers.h>
 #include <IO/Operators.h>

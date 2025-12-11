@@ -4,7 +4,6 @@
 #include <fmt/core.h>
 
 #include <Common/assert_cast.h>
-#include <Common/SipHash.h>
 #include <Common/FieldVisitorToString.h>
 
 #include <Core/NamesAndTypes.h>
