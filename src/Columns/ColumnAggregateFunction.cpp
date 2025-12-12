@@ -428,7 +428,7 @@ void ColumnAggregateFunction::updateHashFast(SipHash & hash) const
     hash.update(wbuf.str().c_str(), wbuf.str().size());
 }
 
-UInt128 getFastHash128() const
+UInt128 ColumnAggregateFunction::getFastHash128() const
 {
   WriteBufferFromOwnString wbuf;
   func->serializeBatch(data, 0, data.size(), wbuf);

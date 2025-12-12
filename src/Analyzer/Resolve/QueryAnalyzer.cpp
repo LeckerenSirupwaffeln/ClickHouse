@@ -3,7 +3,7 @@
 #include <Analyzer/AggregationUtils.h>
 #include <Analyzer/WindowFunctionsUtils.h>
 #include <Analyzer/ValidationUtils.h>
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 #include <Analyzer/IdentifierNode.h>
 #include <Analyzer/MatcherNode.h>
 #include <Analyzer/ColumnTransformers.h>

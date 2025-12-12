@@ -7,7 +7,7 @@
 #include <Interpreters/CNFQueryAtomicFormula.h>
 
 #include <Analyzer/Passes/CNFAtomicFormula.h>
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 #include <Analyzer/IQueryTreeNode.h>
 
 #include <map>

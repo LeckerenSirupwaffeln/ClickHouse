@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-#include <Common/HashState128.h>
+#include <Common/HashUtils.h>
 
 #include <IO/WriteBuffer.h>
 #include <IO/WriteHelpers.h>
@@ -195,7 +195,7 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
     file << "called getTreeHash() at: " << start << " time\n";
     file << "called getTreeHash(): " << called_Z_times << " times\n";
 
-    HashState128 hash_state;
+    HashState tree_hash;
 
     std::unordered_map<const IQueryTreeNode *, size_t> weak_node_to_identifier;
 
@@ -215,23 +215,31 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
             auto node_identifier_it = weak_node_to_identifier.find(node_to_process);
             if (node_identifier_it != weak_node_to_identifier.end())
             {
-                hash_state.update(node_identifier_it->second);
+                /// Update hash with with weak node's identifier
+                const size_t identifier = node_identifier_it->second;
+                tree_hash.update(identifier);
                 continue;
             }
 
             weak_node_to_identifier.emplace(node_to_process, weak_node_to_identifier.size());
         }
 
-        hash_state.update(static_cast<size_t>(node_to_process->getNodeType()));
-        if (compare_options.compare_aliases && !node_to_process->alias.empty())
         {
-            hash_state.update(node_to_process->alias.size());
-            hash_state.update(node_to_process->alias);
+          /// Update hash with node type
+          const UInt8 node_type = static_cast<UInt8>(node_to_process->getNodeType());
+          tree_hash.update(node_type);
         }
 
-        node_to_process->updateTreeHashImpl(hash_state, compare_options);
+        if (compare_options.compare_aliases && !node_to_process->alias.empty())
+        {
+            /// Update hash with alias
+            const std::string& alias_ = node_to_process->getAlias();
+            tree_hash.update(alias_.c_str(), alias_.size());
+        }
 
-        hash_state.update(node_to_process->children.size());
+        /// Update hash with a tree node's hash & it's children length
+        node_to_process->updateTreeHashImpl(tree_hash, compare_options);
+        tree_hash.update(node_to_process->children.size());
 
         for (const auto & node_to_process_child : node_to_process->children)
         {
@@ -241,7 +249,8 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
             nodes_to_process.emplace_back(node_to_process_child.get(), false);
         }
 
-        hash_state.update(node_to_process->weak_pointers.size());
+        /// Update hash with it's weak pointers length
+        tree_hash.update(node_to_process->weak_pointers.size());
 
         for (const auto & weak_pointer : node_to_process->weak_pointers)
         {
@@ -259,7 +268,8 @@ IQueryTreeNode::Hash IQueryTreeNode::getTreeHash(CompareOptions compare_options)
     file << "Duration of this getTreeHash(): " << duration << '\n';
     total_duration += duration;
     file << "Total duration of all getTreeHash() calls: " << total_duration << '\n';
-    return hash_state.get128();
+
+    return tree_hash.getCityHash128();
 }
 
 QueryTreeNodePtr IQueryTreeNode::clone() const

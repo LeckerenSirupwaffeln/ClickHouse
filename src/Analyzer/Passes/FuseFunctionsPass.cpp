@@ -14,7 +14,7 @@
 #include <Analyzer/InDepthQueryTreeVisitor.h>
 #include <Analyzer/ConstantNode.h>
 #include <Analyzer/FunctionNode.h>
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 #include <Analyzer/ColumnNode.h>
 
 #include <numeric>

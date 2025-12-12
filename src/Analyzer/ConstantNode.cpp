@@ -149,8 +149,10 @@ void ConstantNode::updateTreeHashImpl(HashState & hash_state, CompareOptions com
     const auto& column = *constant_value.getColumn();
     hash_state.update(column);
     if (compare_options.compare_types)
+    {
         const auto& type = *constant_value.getType();
         hash_state.update(type);
+    }
 }
 
 QueryTreeNodePtr ConstantNode::cloneImpl() const
@@ -165,8 +167,8 @@ std::shared_ptr<ASTLiteral> ConstantNode::getCachedAST(const F &ast_generator) c
     hash_state.update(getTreeHash());
     /// ast_generator function's address is used as a key to uniquely define generated AST
     hash_state.update(reinterpret_cast<const std::uintptr_t>(&ast_generator));
-    auto hash = getSipHash128AsPair(hash_state);
 
+    const Hash hash = hash_state.getCityHash128();
     if (cached_ast && hash == hash_ast)
         return std::make_shared<ASTLiteral>(*cached_ast);
 

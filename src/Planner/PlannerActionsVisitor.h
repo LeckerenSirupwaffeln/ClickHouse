@@ -6,7 +6,7 @@
 #include <Interpreters/Context_fwd.h>
 
 #include <Analyzer/ConstantNode.h>
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 #include <Analyzer/IQueryTreeNode.h>
 
 #include <Interpreters/ActionsDAG.h>

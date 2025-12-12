@@ -70,9 +70,8 @@ public:
         return WeakHash32(s);
     }
 
-    void updateHashFast(SipHash & /*hash*/) const override
-    {
-    }
+    void updateHashFast(SipHash & /*hash*/) const override {}
+    UInt128 getFastHash128() const override { return 0; }
 
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
     void insertFrom(const IColumn &, size_t) override

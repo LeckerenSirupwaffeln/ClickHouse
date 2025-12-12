@@ -5,7 +5,7 @@
 #include <vector>
 #include <deque>
 
-#include <Common/HashState128.h>
+#include <Common/HashUtils.h>
 #include <Common/TypePromotion.h>
 
 #include <city.h>
@@ -130,7 +130,7 @@ public:
     bool isEqual(const IQueryTreeNode & rhs, CompareOptions compare_options = { .compare_aliases = true, .compare_types = true, .ignore_cte = false }) const;
 
     using Hash = CityHash_v1_0_2::uint128;
-    using HashState = HashState128;
+    using HashState = HashUtils::HashState128;
 
     /** Get tree hash identifying current tree
       *

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <Interpreters/Context_fwd.h>
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 #include <Analyzer/IQueryTreeNode.h>
 #include <Analyzer/Resolve/IdentifierLookup.h>
 #include <Analyzer/Resolve/IdentifierResolver.h>

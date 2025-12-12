@@ -8,7 +8,7 @@
 #include <Analyzer/ConstantNode.h>
 #include <Analyzer/Passes/CNF.h>
 #include <Analyzer/Utils.h>
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 
 #include <Core/Settings.h>
 

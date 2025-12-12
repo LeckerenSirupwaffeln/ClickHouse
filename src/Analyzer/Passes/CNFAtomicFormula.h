@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Analyzer/HashUtils.h>
+#include <Analyzer/AnalyzerHashUtils.h>
 
 namespace DB::Analyzer
 {

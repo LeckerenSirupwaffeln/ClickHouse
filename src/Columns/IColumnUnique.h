@@ -178,6 +178,11 @@ public:
         throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method updateHashFast is not supported for ColumnUnique.");
     }
 
+    UInt128 getFastHash128() const override
+    {
+        throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method getFastHash128 is not supported for ColumnUnique.");
+    }
+
     void compareColumn(const IColumn &, size_t, PaddedPODArray<UInt64> *, PaddedPODArray<Int8> &, int, int) const override
     {
         throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method compareColumn is not supported for ColumnUnique.");
