@@ -222,6 +222,7 @@ public:
     void updateHashWithValue(size_t n, SipHash & hash) const override;
     WeakHash32 getWeakHash32() const override;
     void updateHashFast(SipHash & hash) const override;
+    UInt128 getFastHash128() const override;
     ColumnPtr filter(const Filter & filt, ssize_t result_size_hint) const override;
     void expand(const Filter & mask, bool inverted) override;
     ColumnPtr permute(const Permutation & perm, size_t limit) const override;

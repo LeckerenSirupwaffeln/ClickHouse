@@ -96,6 +96,7 @@ public:
     void updateHashWithValue(size_t n, SipHash & hash) const override;
     WeakHash32 getWeakHash32() const override;
     void updateHashFast(SipHash & hash) const override;
+    UInt128 getFastHash128() const override;
 
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
     void insertRangeFrom(const IColumn & src, size_t start, size_t length) override;

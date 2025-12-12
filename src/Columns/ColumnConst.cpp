@@ -151,6 +151,11 @@ WeakHash32 ColumnConst::getWeakHash32() const
     return WeakHash32(s, element_hash.getData()[0]);
 }
 
+UInt128 ColumnConst::getFastHash128() const
+{
+    return data->getFastHash128();
+}
+
 void ColumnConst::compareColumn(
     const IColumn & rhs, size_t, PaddedPODArray<UInt64> *, PaddedPODArray<Int8> & compare_results, int, int nan_direction_hint)
     const

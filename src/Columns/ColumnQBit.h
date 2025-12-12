@@ -127,6 +127,7 @@ public:
     void skipSerializedInArena(ReadBuffer & in) const override { tuple->skipSerializedInArena(in); }
     void updateHashWithValue(size_t n, SipHash & hash) const override { tuple->updateHashWithValue(n, hash); }
     void updateHashFast(SipHash & hash) const override { tuple->updateHashFast(hash); }
+    UInt128 getFastHash128() const override;
     WeakHash32 getWeakHash32() const override { return tuple->getWeakHash32(); }
 
     void expand(const Filter & mask, bool inverted) override;

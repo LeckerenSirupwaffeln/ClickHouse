@@ -7,6 +7,7 @@
 #include <Common/HashTable/Hash.h>
 #include <Common/HashTable/StringHashSet.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/WeakHash.h>
 #include <Common/assert_cast.h>
 #include <base/memcmpSmall.h>
@@ -159,6 +160,17 @@ void ColumnFixedString::updateHashFast(SipHash & hash) const
 {
     hash.update(n);
     hash.update(reinterpret_cast<const char *>(chars.data()), size() * n);
+}
+
+UInt128 ColumnFixedString::getFastHash128() const
+{
+    const UInt128 n_hash = HashUtils::getFastHash128(n);
+
+    const char* data_ptr = reinterpret_cast<const char *>(chars.data());
+    const size_t data_size = chars.size();
+    const UInt128 data_hash = HashUtils::getFastHash128(data_ptr, data_size);
+
+    return HashUtils::combineFastHash128(n_hash, data_hash);
 }
 
 struct ColumnFixedString::ComparatorBase

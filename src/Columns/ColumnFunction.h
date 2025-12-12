@@ -136,6 +136,11 @@ public:
         throw Exception(ErrorCodes::NOT_IMPLEMENTED, "updateHashFast is not implemented for {}", getName());
     }
 
+    UInt128 getFastHash128() const override
+    {
+        throw Exception(ErrorCodes::NOT_IMPLEMENTED, "getFastHash128 is not implemented for {}", getName());
+    }
+
     void popBack(size_t) override
     {
         throw Exception(ErrorCodes::NOT_IMPLEMENTED, "popBack is not implemented for {}", getName());

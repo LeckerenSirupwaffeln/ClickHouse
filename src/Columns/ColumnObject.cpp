@@ -8,6 +8,7 @@
 #include <IO/ReadBufferFromString.h>
 #include <Common/Arena.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 
 namespace DB
 {
@@ -1164,6 +1165,24 @@ void ColumnObject::updateHashFast(SipHash & hash) const
     for (const auto & [_, column] : dynamic_paths_ptrs)
         column->updateHashFast(hash);
     shared_data->updateHashFast(hash);
+}
+
+UInt128 ColumnObject::getFastHash128() const
+{
+    UInt128 output_hash = shared_data->getFastHash128();
+    for (const auto & [_, column] : typed_paths)
+    {
+        const UInt128 next_hash = column->getFastHash128();
+        output_hash = HashUtils::combineFastHash128(output_hash, next_hash);
+    }
+
+    for (const auto & [_, column] : dynamic_paths_ptrs)
+    {
+        const UInt128 next_hash = column->getFastHash128();
+        output_hash = HashUtils::combineFastHash128(output_hash, next_hash);
+    }
+
+    return output_hash;
 }
 
 ColumnPtr ColumnObject::filter(const Filter & filt, ssize_t result_size_hint) const

@@ -184,6 +184,8 @@ public:
 
     void updateHashFast(SipHash & hash) const override;
 
+    UInt128 getFastHash128() const override;
+
     size_t byteSize() const override;
 
     size_t byteSizeAt(size_t n) const override;

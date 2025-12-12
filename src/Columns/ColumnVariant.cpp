@@ -14,6 +14,7 @@
 #include <Common/typeid_cast.h>
 #include <Common/Arena.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/HashTable/Hash.h>
 #include <Columns/MaskOperations.h>
 
@@ -907,6 +908,16 @@ void ColumnVariant::updateHashFast(SipHash & hash) const
     local_discriminators->updateHashFast(hash);
     for (const auto & variant : variants)
         variant->updateHashFast(hash);
+}
+
+UInt128 ColumnVariant::getFastHash128() const
+{
+    UInt128 output_hash = local_discriminators->getFastHash128();
+    for (const auto & variant : variants)
+        const UInt128 next_hash = variant->getFastHash128();
+        output_hash = HashUtils::combineFastHash128(output_hash, next_hash);
+
+    return output_hash;
 }
 
 ColumnPtr ColumnVariant::filter(const Filter & filt, ssize_t result_size_hint) const

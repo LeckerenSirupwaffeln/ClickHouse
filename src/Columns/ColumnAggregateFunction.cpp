@@ -16,6 +16,7 @@
 #include <Common/FieldVisitorToString.h>
 #include <Common/HashTable/Hash.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/WeakHash.h>
 #include <Common/assert_cast.h>
 #include <Common/iota.h>
@@ -425,6 +426,13 @@ void ColumnAggregateFunction::updateHashFast(SipHash & hash) const
     const ColumnAggregateFunction::Container & vec = getData();
     func->serializeBatch(vec, 0, size(), wbuf);
     hash.update(wbuf.str().c_str(), wbuf.str().size());
+}
+
+UInt128 getFastHash128() const
+{
+  WriteBufferFromOwnString wbuf;
+  func->serializeBatch(data, 0, data.size(), wbuf);
+  return HashUtils::getFastHash128(wbuf.str().c_str(), wbuf.str().size());
 }
 
 /// The returned size is less than real size. The reason is that some parts of

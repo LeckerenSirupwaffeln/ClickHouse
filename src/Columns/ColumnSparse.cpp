@@ -7,6 +7,7 @@
 #include <Columns/ColumnReplicated.h>
 #include <Common/HashTable/Hash.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/WeakHash.h>
 #include <Common/iota.h>
 
@@ -747,6 +748,17 @@ void ColumnSparse::updateHashFast(SipHash & hash) const
     values->updateHashFast(hash);
     offsets->updateHashFast(hash);
     hash.update(_size);
+}
+
+UInt128 ColumnSparse::getFastHash128() const
+{
+    const UInt128 values_hash = values->getFastHash128();
+    const UInt128 offsets_hash = offsets->getFastHash128();
+    const UInt128 size_hash = HashUtils::getFastHash128(_size);
+
+    UInt128 output_hash = HashUtils::combineFastHash128(values_hash, offsets_hash);
+    output_hash         = HashUtils::combineFastHash128(output_hash, size_hash);
+    return output_hash;
 }
 
 void ColumnSparse::getExtremes(Field & min, Field & max) const

@@ -4,6 +4,7 @@
 #include <Common/HashTable/Hash.h>
 #include <Common/RadixSort.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/WeakHash.h>
 #include <Common/assert_cast.h>
 #include <Common/iota.h>
@@ -132,6 +133,14 @@ template <is_decimal T>
 void ColumnDecimal<T>::updateHashFast(SipHash & hash) const
 {
     hash.update(reinterpret_cast<const char *>(data.data()), size() * sizeof(data[0]));
+}
+
+template <is_decimal T>
+UInt128 ColumnDecimal<T>::getFastHash128() const
+{
+    const char* data_ptr = data.raw_data();
+    const size_t data_size = data.size() * sizeof(data[0]);
+    return HashUtils::getFastHash128(data_ptr, data_size);
 }
 
 template <is_decimal T>

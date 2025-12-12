@@ -147,6 +147,8 @@ public:
 
     void updateHashFast(SipHash & hash) const override;
 
+    UInt128 getFastHash128() const override;
+
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
     int compareAt(size_t p1, size_t p2, const IColumn & rhs_, int /*nan_direction_hint*/) const override
 #else

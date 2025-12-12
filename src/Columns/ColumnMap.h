@@ -64,6 +64,7 @@ public:
     void updateHashWithValue(size_t n, SipHash & hash) const override;
     WeakHash32 getWeakHash32() const override;
     void updateHashFast(SipHash & hash) const override;
+    UInt128 getFastHash128() const override;
 
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
     void insertFrom(const IColumn & src_, size_t n) override;

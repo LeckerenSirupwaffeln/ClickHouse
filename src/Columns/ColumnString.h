@@ -224,6 +224,8 @@ public:
 
     void updateHashFast(SipHash & hash) const override;
 
+    UInt128 getFastHash128() const override;
+
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
     void insertRangeFrom(const IColumn & src, size_t start, size_t length) override;
 #else

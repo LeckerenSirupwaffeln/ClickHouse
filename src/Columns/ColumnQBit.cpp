@@ -105,6 +105,11 @@ ColumnPtr ColumnQBit::filter(const Filter & filt, ssize_t result_size_hint) cons
     return ColumnQBit::create(tuple->filter(filt, result_size_hint), dimension);
 }
 
+UInt128 ColumnQBit::getFastHash128() const
+{
+    return tuple->getFastHash128();
+}
+
 void ColumnQBit::expand(const Filter & mask, bool inverted)
 {
     tuple->expand(mask, inverted);

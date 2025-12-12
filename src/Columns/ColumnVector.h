@@ -116,6 +116,8 @@ public:
 
     void updateHashFast(SipHash & hash) const override;
 
+    UInt128 getFastHash128() const override;
+
     size_t byteSize() const override
     {
         return data.size() * sizeof(data[0]);

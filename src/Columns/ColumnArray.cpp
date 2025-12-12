@@ -13,6 +13,7 @@
 #include <Common/Exception.h>
 #include <Common/Arena.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/typeid_cast.h>
 #include <Common/assert_cast.h>
 #include <Common/WeakHash.h>
@@ -341,6 +342,13 @@ void ColumnArray::updateHashFast(SipHash & hash) const
 {
     offsets->updateHashFast(hash);
     data->updateHashFast(hash);
+}
+
+UInt128 ColumnArray::getFastHash128() const
+{
+    const UInt128 offsets_hash  = offsets->getFastHash128();
+    const UInt128 data_hash     = data->getFastHash128();
+    return HashUtils::combineFastHash128(offsets_hash, data_hash);
 }
 
 void ColumnArray::insert(const Field & x)

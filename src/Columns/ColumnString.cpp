@@ -9,6 +9,7 @@
 #include <Common/HashTable/StringHashSet.h>
 #include <Common/HashTable/Hash.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/WeakHash.h>
 #include <Common/assert_cast.h>
 
@@ -726,6 +727,13 @@ void ColumnString::updateHashFast(SipHash & hash) const
 {
     hash.update(reinterpret_cast<const char *>(offsets.data()), offsets.size() * sizeof(offsets[0]));
     hash.update(reinterpret_cast<const char *>(chars.data()), chars.size() * sizeof(chars[0]));
+}
+
+UInt128 ColumnString::getFastHash128() const
+{
+    const UInt128 offsets_hash  = HashUtils::getFastHash128(offsets.data(), offsets.size() * sizeof(offsets[0]));
+    const UInt128 data_hash     = HashUtils::getFastHash128(chars.data()), chars.size() * sizeof(chars[0]));
+    return HashUtils::combineFastHash128(offsets_hash, data_hash);
 }
 
 ColumnPtr ColumnString::createSizeSubcolumn() const

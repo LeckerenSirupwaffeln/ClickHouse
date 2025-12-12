@@ -191,6 +191,11 @@ void ColumnMap::updateHashFast(SipHash & hash) const
     nested->updateHashFast(hash);
 }
 
+UInt128 ColumnMap::getFastHash128() const
+{
+    return nested->getFastHash128();
+}
+
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
 void ColumnMap::insertFrom(const IColumn & src, size_t n)
 #else

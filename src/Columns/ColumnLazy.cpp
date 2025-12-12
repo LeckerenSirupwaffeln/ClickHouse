@@ -177,6 +177,11 @@ void ColumnLazy::updateHashFast(SipHash &) const
     throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method updateHashFast is not supported for {}", getName());
 }
 
+UInt128 ColumnLazy::getFastHash128() const
+{
+  throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method getFastHash128 is not supported for {}", getName());
+}
+
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
 void ColumnLazy::insertRangeFrom(const IColumn & src, size_t start, size_t length)
 #else

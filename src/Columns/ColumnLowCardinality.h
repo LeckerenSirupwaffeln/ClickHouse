@@ -120,6 +120,8 @@ public:
 
     void updateHashFast(SipHash &) const override;
 
+    UInt128 getFastHash128() const override;
+
     ColumnPtr filter(const Filter & filt, ssize_t result_size_hint) const override
     {
         return ColumnLowCardinality::create(

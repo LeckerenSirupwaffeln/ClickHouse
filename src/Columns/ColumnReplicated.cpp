@@ -2,6 +2,7 @@
 #include <Columns/ColumnConst.h>
 #include <Columns/ColumnReplicated.h>
 #include <Common/WeakHash.h>
+#include <Common/HashUtils.h>
 
 namespace DB
 {
@@ -520,6 +521,13 @@ void ColumnReplicated::updateHashFast(SipHash & hash) const
 {
     indexes.getIndexes()->updateHashFast(hash);
     nested_column->updateHashFast(hash);
+}
+
+UInt128 ColumnReplicated::getFastHash128() const
+{
+    const UInt128 indexes_hash        = indexes.getIndexes()->getFastHash128();
+    const UInt128 nested_column_hash  = nested_column->getFastHash128();
+    return HashUtils::combineFastHash128(indexes_hash, nested_column_hash);
 }
 
 void ColumnReplicated::getExtremes(Field & min, Field & max) const

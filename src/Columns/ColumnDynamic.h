@@ -210,6 +210,8 @@ public:
         variant_column_ptr->updateHashFast(hash);
     }
 
+    UInt128 getFastHash128() const override;
+
     ColumnPtr filter(const Filter & filt, ssize_t result_size_hint) const override
     {
         return create(variant_column_ptr->filter(filt, result_size_hint), variant_info, max_dynamic_types, global_max_dynamic_types);

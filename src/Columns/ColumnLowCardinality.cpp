@@ -5,7 +5,9 @@
 #include <DataTypes/NumberTraits.h>
 #include <Common/HashTable/HashSet.h>
 #include <Common/HashTable/HashMap.h>
+#include <Common/HashUtils.h>
 #include <Common/WeakHash.h>
+#include <Common/HashUtils.h>
 #include <Common/assert_cast.h>
 #include <base/types.h>
 #include <base/sort.h>
@@ -326,6 +328,13 @@ void ColumnLowCardinality::updateHashFast(SipHash & hash) const
 {
     idx.getIndexes()->updateHashFast(hash);
     getDictionary().getNestedColumn()->updateHashFast(hash);
+}
+
+UInt128 ColumnLowCardinality::getFastHash128() const
+{
+    const UInt128 indexes_hash = getIndexes().getFastHash128();
+    const UInt128 nested_column_hash = getDictionary().getNestedColumn()->getFastHash128();
+    return HashUtils::combineFastHash128(indexes_hash, nested_column_hash);;
 }
 
 MutableColumnPtr ColumnLowCardinality::cloneResized(size_t size) const

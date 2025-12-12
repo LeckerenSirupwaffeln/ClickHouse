@@ -18,6 +18,7 @@
 #include <Common/NaNUtils.h>
 #include <Common/RadixSort.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/TargetSpecific.h>
 #include <Common/WeakHash.h>
 #include <Common/assert_cast.h>
@@ -101,6 +102,12 @@ template <typename T>
 void ColumnVector<T>::updateHashFast(SipHash & hash) const
 {
     hash.update(reinterpret_cast<const char *>(data.data()), size() * sizeof(data[0]));
+}
+
+template <typename T>
+UInt128 ColumnVector<T>::getFastHash128() const
+{
+    return HashUtils::getFastHash128(data.raw_data(), data.size() * sizeof(data[0]));
 }
 
 template <typename T>

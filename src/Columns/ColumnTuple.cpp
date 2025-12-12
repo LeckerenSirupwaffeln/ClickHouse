@@ -12,6 +12,7 @@
 #include <Common/assert_cast.h>
 #include <Common/iota.h>
 #include <Common/typeid_cast.h>
+#include <Common/HashUtils.h>
 #include <Columns/ColumnsCommon.h>
 #include <DataTypes/Serializations/SerializationInfoTuple.h>
 #include <base/sort.h>
@@ -428,6 +429,20 @@ void ColumnTuple::updateHashFast(SipHash & hash) const
 {
     for (const auto & column : columns)
         column->updateHashFast(hash);
+}
+
+UInt128 ColumnTuple::getFastHash128() const
+{
+    const size_t N = columns.size();
+    if (unlikely(N == 0))
+      throw Exception(ErrorCodes::LOGICAL_ERROR, "Can't get hash of an empty ColumnTuple in ColumnTuple::getFastHash128");
+
+    UInt128 output_hash = columns[0].getFastHash128();
+    for (size_t i = 1; i < N; ++i)
+        const UInt128 new_hash = columns[i].getFastHash128();
+        output_hash = HashUtils::combineFastHash128(output_hash, new_hash);
+
+    return output_hash;
 }
 
 #if !defined(DEBUG_OR_SANITIZER_BUILD)

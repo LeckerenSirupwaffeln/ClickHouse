@@ -358,6 +358,9 @@ public:
     /// Update state of hash with all column.
     virtual void updateHashFast(SipHash & hash) const = 0;
 
+    /// Get a non-secure, but fast 128-bit hash
+    virtual UInt128 getFastHash128() const = 0;
+
     /** Removes elements that don't match the filter.
       * Is used in WHERE and HAVING operations.
       * If result_size_hint > 0, then makes advance reserve(result_size_hint) for the result column;

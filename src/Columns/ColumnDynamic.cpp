@@ -854,6 +854,11 @@ void ColumnDynamic::updateHashWithValue(size_t n, SipHash & hash) const
     variant_col.getVariantByGlobalDiscriminator(discr).updateHashWithValue(variant_col.offsetAt(n), hash);
 }
 
+UInt128 ColumnDynamic::getFastHash128() const
+{
+    return variant_column_ptr->getFastHash128();
+}
+
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
 int ColumnDynamic::compareAt(size_t n, size_t m, const IColumn & rhs, int nan_direction_hint) const
 #else

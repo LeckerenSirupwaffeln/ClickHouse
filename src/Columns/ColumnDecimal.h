@@ -109,6 +109,7 @@ public:
     void updateHashWithValue(size_t n, SipHash & hash) const override;
     WeakHash32 getWeakHash32() const override;
     void updateHashFast(SipHash & hash) const override;
+    UInt128 getFastHash128() const override;
 #if !defined(DEBUG_OR_SANITIZER_BUILD)
     int compareAt(size_t n, size_t m, const IColumn & rhs_, int nan_direction_hint) const override;
 #else

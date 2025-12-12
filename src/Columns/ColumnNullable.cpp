@@ -3,6 +3,7 @@
 #include <Common/Arena.h>
 #include <Common/HashTable/StringHashSet.h>
 #include <Common/SipHash.h>
+#include <Common/HashUtils.h>
 #include <Common/assert_cast.h>
 #include <Common/WeakHash.h>
 #include <Columns/ColumnNullable.h>
@@ -80,6 +81,13 @@ void ColumnNullable::updateHashFast(SipHash & hash) const
 {
     null_map->updateHashFast(hash);
     nested_column->updateHashFast(hash);
+}
+
+UInt128 ColumnNullable::getFastHash128() const
+{
+  const UInt128 null_map_hash = null_map->getFastHash128();
+  const UInt128 nested_column_hash = nested_column->getFastHash128();
+  return HashUtils::combineFastHash128(null_map_hash, nested_column_hash);
 }
 
 MutableColumnPtr ColumnNullable::cloneResized(size_t new_size) const

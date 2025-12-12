@@ -166,6 +166,7 @@ public:
     void updateHashWithValue(size_t, SipHash &) const override { throwInapplicable(); }
     WeakHash32 getWeakHash32() const override { throwInapplicable(); }
     void updateHashFast(SipHash &) const override { throwInapplicable(); }
+    UInt128 getFastHash128() const override { throwInapplicable(); }
     ColumnPtr filter(const Filter &, ssize_t) const override { throwInapplicable(); }
     void expand(const Filter &, bool) override { throwInapplicable(); }
     ColumnPtr permute(const Permutation &, size_t) const override { throwInapplicable(); }
