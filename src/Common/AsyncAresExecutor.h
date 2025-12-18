@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Core/BackgroundSchedulePool.h>
+#include <Core/BackgroundSchedulePoolTaskHolder.h>
 #include <Common/Exception.h>
+#include <Common/Stopwatch.h>
 #include <Interpreters/Context_fwd.h>
 
 #include <ares.h>
@@ -29,7 +30,7 @@ public:
     AsyncAresExecutor& operator=(AsyncAresExecutor &&) = delete;
     
     static AsyncAresExecutor& instance();
-    void initialize_task_handle(ContextPtr context);
+    void initialize_task_holder(ContextPtr context);
     void query(const char *, int, int, ares_callback, void *);
     void shutdown();
 
@@ -41,10 +42,10 @@ private:
 
     mutable std::mutex mutex;
     ares_channel channel{nullptr};
-    std::atomic<bool> is_task_handle_initialized{false};
-    std::atomic<bool> is_allowed_to_run{true}; 
-    std::atomic<bool> should_process_queries{false};
-    BackgroundSchedulePool::TaskHandle task_handle{nullptr};
+    std::atomic<bool> is_task_holder_initialized{false};
+    Stopwatch watch;
+    BackgroundSchedulePoolTaskHolder  task_holder{nullptr};
+    static constexpr uint32_t minimum_interval = 10;
 };
 
 }

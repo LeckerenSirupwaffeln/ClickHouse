@@ -1,12 +1,15 @@
-#include <AsyncAresExecutor.h>
+#include <Common/AsyncAresExecutor.h>
+
+#include <Core/BackgroundSchedulePool.h>
+#include <Interpreters/Context.h>
 
 namespace DB {
 
 namespace ErrorCodes
 {
 extern const int FAILED_SETUP;
-extern const int CALLED_BEFORE_INITIALIZING_TASK_HANDLE;
-extern const int TRIED_TO_DOUBLE_INITIALIZE_TASK_HANDLE;
+extern const int CALLED_BEFORE_INITIALIZING_TASK_HOLDER;
+extern const int TRIED_TO_DOUBLE_INITIALIZE_TASK_HOLDER;
 }
 
 /// Public methods
@@ -16,18 +19,22 @@ AsyncAresExecutor& AsyncAresExecutor::instance()
     return instance;
 }
 
-void AsyncAresExecutor::initialize_task_handle(ContextPtr context)
+void AsyncAresExecutor::initialize_task_holder(ContextPtr context)
 {   
-    if (is_task_handle_initialized.load(std::memory_order_acquire))
-        throw Exception(ErrorCodes::TRIED_TO_DOUBLE_INITIALIZE_TASK_HANDLE, "Attempted to double initialize task handle of AsyncAresExecutor");
+    if (is_task_holder_initialized.load(std::memory_order_acquire))
+        throw Exception(ErrorCodes::TRIED_TO_DOUBLE_INITIALIZE_TASK_HOLDER, "Attempted to double initialize task holder of AsyncAresExecutor");
 
-    std::lock_guard lock{mutex};
-    task_handle = context->getSchedulePool().createTask(
-        "AresAsyncExecutor", 
-        [this] { run(); }
-    );
+    {
+        std::lock_guard lock{mutex};
+        task_holder = context->getSchedulePool().createTask(
+            StorageID::createEmpty(),
+            "AresAsyncExecutor", 
+            [this] { run(); }
+        );
+        task_holder->activate();
+    }
 
-    is_task_handle_initialized.store(true, std::memory_order_release);
+    is_task_holder_initialized.store(true, std::memory_order_release);
 }
 
 void AsyncAresExecutor::query(
@@ -37,27 +44,22 @@ void AsyncAresExecutor::query(
     ares_callback callback,
     void * arg)
 {
-    if (!is_task_handle_initialized.load(std::memory_order_acquire)) [[unlikely]]
-        throw Exception(ErrorCodes::CALLED_BEFORE_INITIALIZING_TASK_HANDLE, "Attempted to query ares before initializing task handle in AsyncAresExecutor");
+    if (!is_task_holder_initialized.load(std::memory_order_acquire)) [[unlikely]]
+        throw Exception(ErrorCodes::CALLED_BEFORE_INITIALIZING_TASK_HOLDER, "Attempted to query ares before initializing task holder in AsyncAresExecutor");
 
     {
         std::lock_guard lock{mutex};
         ares_query(channel, name, dnsclass, type, callback, arg);
     }
 
-    should_process_queries.store(true, std::memory_order_release);
-    if (is_allowed_to_run.load(std::memory_order_acquire))
-    {
-        task_handle->schedule();
-    }
+    task_holder->schedule();
 }
 
 void AsyncAresExecutor::shutdown()
 {
-    if (task_handle)
+    if (task_holder)
     {
-        task_handle->deactivate();
-        task_handle.reset();
+        task_holder->deactivate();
     }
 
     if (channel)
@@ -90,32 +92,27 @@ AsyncAresExecutor::~AsyncAresExecutor()
 
 void AsyncAresExecutor::run()
 {
-    if (is_allowed_to_run.load(std::memory_order_acquire))
+    const UInt64 elapsed_ms = watch.elapsedMilliseconds();
+    if (elapsed_ms < minimum_interval)
     {
-        /// Only run if should process queries
-        /// Either way set should_process_queries to false atomically
-        if (should_process_queries.exchange(false, std::memory_order_acq_rel))
-        {
-            {
-                std::lock_guard lock{mutex};
-                /// ares_process_fd handles both IO and internal timeouts
-                ares_process_fd(channel, ARES_SOCKET_BAD, ARES_SOCKET_BAD);
-            }
+        task_holder->scheduleAfter(minimum_interval - elapsed_ms);
+        return;
+    }
 
-            is_allowed_to_run.store(false, std::memory_order_release);
-            task_handle->scheduleAfter(10);
-        }
-    }
-    else
     {
-        /// Reset state to allow it to run again after 10 ms passed
-        is_allowed_to_run.store(true, std::memory_order_release);
-        /// Process queries if they arrived within the idle window
-        if (should_process_queries.load(std::memory_order_acquire))
-        {
-            task_handle->schedule();
-        }
+        std::lock_guard lock{mutex};
+        /// ares_process_fd handles both IO and internal timeouts
+        ares_process_fd(channel, ARES_SOCKET_BAD, ARES_SOCKET_BAD);
     }
+    watch.restart();
+
+    struct timeval tv;
+    struct timeval * max_tv = nullptr; // No maximum limit
+    struct timeval * next_timeout = ares_timeout(channel, max_tv, &tv);
+    if (next_timeout == nullptr)
+        return;
+
+    task_holder->scheduleAfter(minimum_interval);
 }
 
 }

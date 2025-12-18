@@ -1,13 +1,13 @@
-#include <SRVResolver.h>
+#include <Common/SRVResolver.h>
 
 #include <algorithm>
 #include <future>
 
 #include <ares.h>
-#include <arpa_nameser.h>
+#include <ares_nameser.h>
 
+#include <base/defines.h>
 #include <Common/AsyncAresExecutor.h>
-#include <Common/defines.h>
 #include <Common/Exception.h>
 
 namespace DB
@@ -31,7 +31,7 @@ SRVResolver::SRVResolver(const std::string& srv_endpoint_)
     };
 
     /// We need to use unique_ptr to allocate on the heap, otherwise we get segfault
-    auto bridge_ptr{std::make_unique<Bridge>{std::promise<void>{}, this}};
+    auto bridge_ptr{std::make_unique<Bridge>(Bridge{std::promise<void>{}, this})};
     auto future{bridge_ptr->promise.get_future()};
 
     AsyncAresExecutor::instance().query(
@@ -73,7 +73,7 @@ std::optional<std::string> SRVResolver::getNextFreshEndpoint()
         const auto & endpoint{endpoints[current_idx].endpoint};
         current_idx = (current_idx + 1) % N;
 
-        return std::make_optional<std::string>{endpoint};
+        return std::make_optional<std::string>(endpoint);
     }
 }
 
