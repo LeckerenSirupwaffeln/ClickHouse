@@ -94,7 +94,8 @@ void registerDictionarySourceMongoDB(DictionarySourceFactory & factory)
             }
         }
 
-        configuration->checkHosts(context);
+        for (const auto & host : configuration->uri.hosts())
+            context->getRemoteHostFilter().checkHostAndPort(host.name, toString(host.port));
 
         return std::make_unique<MongoDBDictionarySource>(dict_struct, std::move(configuration), std::make_shared<const Block>(sample_block));
     };

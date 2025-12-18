@@ -4,6 +4,7 @@
 
 #if USE_MONGODB
 #include <Common/RemoteHostFilter.h>
+#include <Common/SRVResolver.h>
 
 #include <Analyzer/JoinNode.h>
 #include <Analyzer/ColumnNode.h>
@@ -44,13 +45,7 @@ struct MongoDBConfiguration
     std::unique_ptr<mongocxx::uri> uri;
     String collection;
     std::unordered_set<String> oid_fields = {"_id"};
-
-    void checkHosts(const ContextPtr & context) const;
-
-    bool isOidColumn(const std::string & name) const
-    {
-        return oid_fields.contains(name);
-    }
+    uint8_t is_srv {0};
 };
 
 /** Implements storage in the MongoDB database.
@@ -114,8 +109,12 @@ private:
         const SelectQueryInfo & query,
         const Block & sample_block);
 
-    const MongoDBConfiguration configuration;
     LoggerPtr log;
+    mongocxx::client* client_ptr {nullptr};
+    mongocxx::database database;
+    mongocxx::collection collection;
+    std::unordered_set<String> oid_fields;
+    std::optional<SRVResolver> srv_resolver;
 };
 
 }

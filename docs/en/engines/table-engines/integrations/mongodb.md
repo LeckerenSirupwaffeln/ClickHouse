@@ -13,7 +13,6 @@ doc_type: 'reference'
 MongoDB engine is read-only table engine which allows to read data from a remote [MongoDB](https://www.mongodb.com/) collection.
 
 Only MongoDB v3.6+ servers are supported.
-[Seed list(`mongodb+srv`)](https://www.mongodb.com/docs/manual/reference/glossary/#std-term-seed-list) is not yet supported.
 
 ## Creating a table {#creating-a-table}
 
@@ -40,7 +39,6 @@ CREATE TABLE [IF NOT EXISTS] [db.]table_name
 
 :::tip
 If you are using the MongoDB Atlas cloud offering connection url can be obtained from 'Atlas SQL' option.
-Seed list(`mongodb**+srv**`) is not yet supported, but will be added in future releases.
 :::
 
 Alternatively, you can pass a URI:

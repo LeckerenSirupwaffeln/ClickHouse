@@ -39,9 +39,6 @@ private:
 
     Chunk generate() override;
 
-    mongocxx::client client;
-    mongocxx::database database;
-    mongocxx::collection collection;
     mongocxx::cursor cursor;
 
     Block sample_block;

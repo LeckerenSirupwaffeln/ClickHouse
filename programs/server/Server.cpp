@@ -25,6 +25,7 @@
 #include <base/getFQDNOrHostName.h>
 #include <base/safeExit.h>
 #include <base/Numa.h>
+#include <Common/AsyncAresExecutor.h>
 #include <Common/PoolId.h>
 #include <Common/MemoryTracker.h>
 #include <Common/MemoryWorker.h>
@@ -1239,6 +1240,10 @@ try
                 PreformattedMessage::create("ThreadFuzzer is enabled. Application will run slowly and unstable."));
     }
 
+    {
+        AsyncAresExecutor::instance().initialize_task_handle(global_context);
+    }
+
 #if defined(SANITIZER)
     auto sanitizers = getSanitizerNames();
 
@@ -1424,6 +1429,7 @@ try
     /// Otherwise GlobalThreadPool::shutdown() will hang, since Context holds some threads.
     SCOPE_EXIT_SAFE({
         async_metrics->stop();
+        AsyncAresExecutor::instance().shutdown();
 
         /** Ask to cancel background jobs all table engines,
           *  and also query_log.

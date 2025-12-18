@@ -1,6 +1,7 @@
 #include "config.h"
 
 #if USE_MONGODB
+#include <Storages/StorageMongoDB.h>
 
 #include <Analyzer/ColumnNode.h>
 #include <Analyzer/ConstantNode.h>
@@ -27,7 +28,6 @@
 #include <QueryPipeline/Pipe.h>
 #include <Storages/NamedCollectionsHelpers.h>
 #include <Storages/StorageFactory.h>
-#include <Storages/StorageMongoDB.h>
 #include <Storages/checkAndGetLiteralArgument.h>
 
 #include <bsoncxx/json.hpp>
@@ -61,23 +61,17 @@ namespace Setting
 
 static constexpr const char * MONGODB_RESERVED_CHARS = "!?#/'\",;:$&()[]*+=@";
 
-void MongoDBConfiguration::checkHosts(const ContextPtr & context) const
-{
-    // Because domain records will be resolved inside the driver, we can't check resolved IPs for our restrictions.
-    for (const auto & host : uri->hosts())
-        context->getRemoteHostFilter().checkHostAndPort(host.name, toString(host.port));
-}
-
 StorageMongoDB::StorageMongoDB(
     const StorageID & table_id_,
-    MongoDBConfiguration configuration_,
+    const MongoDBConfiguration& configuration_,
     const ColumnsDescription & columns_,
     const ConstraintsDescription & constraints_,
     const String & comment)
     : IStorage{table_id_}
-    , configuration{std::move(configuration_)}
     , log(getLogger("StorageMongoDB (" + table_id_.getFullTableName() + ")"))
 {
+    
+    
     StorageInMemoryMetadata storage_metadata;
     storage_metadata.setColumns(columns_);
     storage_metadata.setConstraints(constraints_);
@@ -139,12 +133,16 @@ static MongoDBConfiguration getConfigurationImpl(const StorageID * table_id, AST
                 String escaped_password = encodeString(named_collection->get<String>("password"));
                 auth_string = fmt::format("{}:{}@", escaped_user, escaped_password);
             }
-            configuration.uri = std::make_unique<mongocxx::uri>(fmt::format("mongodb://{}{}:{}/{}?{}",
-                                                          auth_string,
-                                                          named_collection->get<String>("host"),
-                                                          named_collection->get<String>("port"),
-                                                          named_collection->get<String>("database"),
-                                                          named_collection->getOrDefault<String>("options", "")));
+            configuration.uri = std::make_unique<mongocxx::uri>(
+                fmt::format(
+                    "mongodb://{}{}:{}/{}?{}",
+                    auth_string,
+                    named_collection->get<String>("host"),
+                    named_collection->get<String>("port"),
+                    named_collection->get<String>("database"),
+                    named_collection->getOrDefault<String>("options", "")
+                )
+            );
         }
         configuration.collection = named_collection->get<String>("collection");
         if (named_collection->has("oid_columns"))
@@ -211,7 +209,10 @@ static MongoDBConfiguration getConfigurationImpl(const StorageID * table_id, AST
         else if (engine_args.size() == 2 || engine_args.size() == 3)
         {
             configuration.collection = checkAndGetLiteralArgument<String>(engine_args[1], "database");
-            configuration.uri =  std::make_unique<mongocxx::uri>(checkAndGetLiteralArgument<String>(engine_args[0], "host"));
+            const auto uri_string {checkAndGetLiteralArgument<String>(engine_args[0], "host")};
+            if (uri_string.starts_with("mongodb+srv")
+                configuration.is_srv = static_cast<uint8_t>(true);
+            configuration.uri =  std::make_unique<mongocxx::uri>(uri_string);
             if (engine_args.size() == 3)
                 boost::split(configuration.oid_fields,
                     checkAndGetLiteralArgument<String>(engine_args[2], "oid_columns"), boost::is_any_of(","));
@@ -222,7 +223,8 @@ static MongoDBConfiguration getConfigurationImpl(const StorageID * table_id, AST
                                 "MongoDB('host:port', 'database', 'collection', 'user', 'password'[, options[, oid_columns]]) or MongoDB('uri', 'collection'[, oid columns]).");
     }
 
-    configuration.checkHosts(context);
+    for (const auto & host : configuration.uri.hosts())
+        context->getRemoteHostFilter().checkHostAndPort(host.name, toString(host.port));
 
     return configuration;
 }
@@ -370,7 +372,8 @@ std::optional<bsoncxx::document::value> StorageMongoDB::visitWhereFunctionArgume
     auto func_value = BSONCXXHelper::fieldAsBSONValue(
         const_value,
         const_type,
-        configuration.isOidColumn(column_node->getColumnName()));
+        oid_fields.contains(column_node->getColumnName())
+    );
 
     if (func_name == "$in" && func_value.view().type() != bsoncxx::v_noabi::type::k_array)
         func_name = "$eq";
