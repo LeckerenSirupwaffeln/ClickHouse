@@ -1,7 +1,10 @@
 #include <Common/SRVResolver.h>
 
+
 #include <algorithm>
+#include <chrono>
 #include <future>
+#include <semaphore>
 
 #include <ares.h>
 #include <ares_nameser.h>
