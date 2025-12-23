@@ -6,7 +6,7 @@
 #include <ares.h>
 
 #include <atomic>
-#include <optional>
+#include <variant>
 #include <mutex>
 
 namespace DB
