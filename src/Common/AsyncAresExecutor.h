@@ -6,8 +6,7 @@
 #include <ares.h>
 
 #include <atomic>
-#include <variant>
-#include <mutex>
+
 
 namespace DB
 {
@@ -38,7 +37,6 @@ private:
 
     void loop();
 
-    mutable std::mutex mutex;
     ares_channel channel{nullptr};
     std::atomic<bool> is_shutdown_called{false};
     std::optional<ThreadFromGlobalPool> background_thread{std::nullopt};
