@@ -1,8 +1,5 @@
 #pragma once
 
-#include <Common/ThreadPool.h>
-#include <Common/Stopwatch.h>
-
 #include <ares.h>
 
 #include <atomic>
@@ -39,7 +36,6 @@ private:
 
     ares_channel channel{nullptr};
     std::atomic<bool> is_shutdown_called{false};
-    std::optional<ThreadFromGlobalPool> background_thread{std::nullopt};
 };
 
 }
