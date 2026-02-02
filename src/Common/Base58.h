@@ -3,7 +3,6 @@
 #include <base/types.h>
 #include <optional>
 
-
 namespace DB
 {
 

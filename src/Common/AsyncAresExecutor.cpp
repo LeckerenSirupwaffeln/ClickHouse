@@ -16,28 +16,29 @@
 #include <functional>
 #include <memory>
 #include <semaphore>
-#include <string_view>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
-namespace DB {
+namespace DB
+{
 
 namespace ErrorCodes
 {
-    extern const int INVALID_IP_ADDRESS_FORMAT;
-    extern const int EXTERNAL_LIBRARY_ERROR;
-    extern const int TIMEOUT_EXCEEDED;
+extern const int INVALID_IP_ADDRESS_FORMAT;
+extern const int EXTERNAL_LIBRARY_ERROR;
+extern const int TIMEOUT_EXCEEDED;
 }
 
 }
 
-namespace {
+namespace
+{
 
 using ::AsyncAresExecutor::ErrorCode;
-
-constexpr uint32_t MIN_TTL = 60u;
-constexpr uint32_t MAX_TTL = 86400u;
+using ::AsyncAresExecutor::MAX_TTL;
+using ::AsyncAresExecutor::MIN_TTL;
 
 template <typename T>
 struct AsyncResult
@@ -54,20 +55,23 @@ enum class QueryType
     SRV_RECORD,
 };
 
-/// Forward declarations of our handlers for responses
-/// Handlers may not throw exceptions as they are invoked by c-ares, a C library
-std::vector<ARecord>    handleResponseARecord(const ares_dns_record_t *)    noexcept;
+std::vector<ARecord> handleResponseARecord(const ares_dns_record_t *) noexcept;
 std::vector<AAAARecord> handleResponseAAAARecord(const ares_dns_record_t *) noexcept;
-std::vector<PTRRecord>  handleResponsePTRRecord(const ares_dns_record_t *)  noexcept;
-std::vector<SRVRecord>  handleResponseSRVRecord(const ares_dns_record_t *)  noexcept;
+std::vector<PTRRecord> handleResponsePTRRecord(const ares_dns_record_t *) noexcept;
+std::vector<SRVRecord> handleResponseSRVRecord(const ares_dns_record_t *) noexcept;
 template <QueryType Q>
-consteval auto get_handler() {
-    
-    if constexpr (Q == QueryType::A_RECORD)         return &handleResponseARecord;
-    else if constexpr (Q == QueryType::AAAA_RECORD) return &handleResponseAAAARecord;
-    else if constexpr (Q == QueryType::PTR_RECORD)  return &handleResponsePTRRecord;
-    else if constexpr (Q == QueryType::SRV_RECORD)  return &handleResponseSRVRecord;
-    else static_assert(Q != Q, "Unsupported template QueryType provided to get_handler()");
+consteval auto get_handler()
+{
+    if constexpr (Q == QueryType::A_RECORD)
+        return &handleResponseARecord;
+    else if constexpr (Q == QueryType::AAAA_RECORD)
+        return &handleResponseAAAARecord;
+    else if constexpr (Q == QueryType::PTR_RECORD)
+        return &handleResponsePTRRecord;
+    else if constexpr (Q == QueryType::SRV_RECORD)
+        return &handleResponseSRVRecord;
+    else
+        static_assert(Q != Q, "Unsupported template QueryType provided to get_handler()");
 }
 
 /// Forward declarations of our customized ares query functions
@@ -76,199 +80,227 @@ int aresQueryAAAARecord(ares_channel, const char *, ares_callback, void *);
 int aresQueryPTRRecord(ares_channel, const char *, ares_callback, void *);
 int aresQuerySRVRecord(ares_channel, const char *, ares_callback, void *);
 template <QueryType Q>
-consteval auto get_query_function() {
-    
-    if constexpr (Q == QueryType::A_RECORD)         return &aresQueryARecord;
-    else if constexpr (Q == QueryType::AAAA_RECORD) return &aresQueryAAAARecord;
-    else if constexpr (Q == QueryType::PTR_RECORD)  return &aresQueryPTRRecord;
-    else if constexpr (Q == QueryType::SRV_RECORD)  return &aresQuerySRVRecord;
-    else static_assert(Q != Q, "Unsupported template QueryType provided to get_query_function()");
+consteval auto get_query_function()
+{
+    if constexpr (Q == QueryType::A_RECORD)
+        return &aresQueryARecord;
+    else if constexpr (Q == QueryType::AAAA_RECORD)
+        return &aresQueryAAAARecord;
+    else if constexpr (Q == QueryType::PTR_RECORD)
+        return &aresQueryPTRRecord;
+    else if constexpr (Q == QueryType::SRV_RECORD)
+        return &aresQuerySRVRecord;
+    else
+        static_assert(Q != Q, "Unsupported template QueryType provided to get_query_function()");
 }
 
-constexpr ErrorCode ares_status_to_error_code(
-    int status) noexcept
+constexpr ErrorCode ares_status_to_error_code(int status) noexcept
 {
     switch (status)
     {
-        case ARES_EADDRGETNETWORKPARAMS: return ErrorCode::AresQueryNetworkParamsError;
-        case ARES_EBADFAMILY:            return ErrorCode::AresQueryInvalidAddressFamily;
-        case ARES_EBADFLAGS:             return ErrorCode::AresQueryInvalidFlags;
-        case ARES_EBADHINTS:             return ErrorCode::AresQueryInvalidHints;
-        case ARES_EBADNAME:              return ErrorCode::AresQueryInvalidName;
-        case ARES_EBADQUERY:             return ErrorCode::AresQueryInvalidQuery;
-        case ARES_EBADRESP:              return ErrorCode::AresQueryInvalidResponse;
-        case ARES_EBADSTR:               return ErrorCode::AresQueryInvalidString;
-        case ARES_ECANCELLED:            return ErrorCode::AresQueryCancelled;
-        case ARES_ECONNREFUSED:          return ErrorCode::AresQueryConnectionRefused;
-        case ARES_EDESTRUCTION:          return ErrorCode::AresQueryChannelDestroyed;
-        case ARES_EFILE:                 return ErrorCode::AresQueryConfigurationFileError;
-        case ARES_EFORMERR:              return ErrorCode::AresQueryFormError;
-        case ARES_ELOADIPHLPAPI:         return ErrorCode::AresQueryLoadLibraryError;
-        case ARES_ENODATA:               return ErrorCode::AresQueryNoData;  
-        case ARES_ENOMEM:                return ErrorCode::AresQueryOutOfMemory;   
-        case ARES_ENONAME:               return ErrorCode::AresQueryNoName; 
-        case ARES_ENOTFOUND:             return ErrorCode::AresQueryNotFound;  
-        case ARES_ENOTIMP:               return ErrorCode::AresQueryNotImplemented;
-        case ARES_ENOTINITIALIZED:       return ErrorCode::AresQueryNotInitialized;
-        case ARES_ENOTSPECIAL:           return ErrorCode::AresQueryNotSpecial;
-        case ARES_EOF:                   return ErrorCode::AresQueryEndOfFile;  
-        case ARES_EREFUSED:              return ErrorCode::AresQueryRefused;
-        case ARES_ESERVFAIL:             return ErrorCode::AresQueryServerFailure;
-        case ARES_ETIMEOUT:              return ErrorCode::AresQueryTimeout;
-        default:                         return ErrorCode::AresQueryUnknown;
+        case ARES_EADDRGETNETWORKPARAMS:
+            return ErrorCode::AresQueryNetworkParamsError;
+        case ARES_EBADFAMILY:
+            return ErrorCode::AresQueryInvalidAddressFamily;
+        case ARES_EBADFLAGS:
+            return ErrorCode::AresQueryInvalidFlags;
+        case ARES_EBADHINTS:
+            return ErrorCode::AresQueryInvalidHints;
+        case ARES_EBADNAME:
+            return ErrorCode::AresQueryInvalidName;
+        case ARES_EBADQUERY:
+            return ErrorCode::AresQueryInvalidQuery;
+        case ARES_EBADRESP:
+            return ErrorCode::AresQueryInvalidResponse;
+        case ARES_EBADSTR:
+            return ErrorCode::AresQueryInvalidString;
+        case ARES_ECANCELLED:
+            return ErrorCode::AresQueryCancelled;
+        case ARES_ECONNREFUSED:
+            return ErrorCode::AresQueryConnectionRefused;
+        case ARES_EDESTRUCTION:
+            return ErrorCode::AresQueryChannelDestroyed;
+        case ARES_EFILE:
+            return ErrorCode::AresQueryConfigurationFileError;
+        case ARES_EFORMERR:
+            return ErrorCode::AresQueryFormError;
+        case ARES_ELOADIPHLPAPI:
+            return ErrorCode::AresQueryLoadLibraryError;
+        case ARES_ENODATA:
+            return ErrorCode::AresQueryNoData;
+        case ARES_ENOMEM:
+            return ErrorCode::AresQueryOutOfMemory;
+        case ARES_ENONAME:
+            return ErrorCode::AresQueryNoName;
+        case ARES_ENOTFOUND:
+            return ErrorCode::AresQueryNotFound;
+        case ARES_ENOTIMP:
+            return ErrorCode::AresQueryNotImplemented;
+        case ARES_ENOTINITIALIZED:
+            return ErrorCode::AresQueryNotInitialized;
+        case ARES_ENOTSPECIAL:
+            return ErrorCode::AresQueryNotSpecial;
+        case ARES_EOF:
+            return ErrorCode::AresQueryEndOfFile;
+        case ARES_EREFUSED:
+            return ErrorCode::AresQueryRefused;
+        case ARES_ESERVFAIL:
+            return ErrorCode::AresQueryServerFailure;
+        case ARES_ETIMEOUT:
+            return ErrorCode::AresQueryTimeout;
+        default:
+            return ErrorCode::AresQueryUnknown;
     }
 }
 
-std::vector<ARecord> handleResponseARecord(
-    const ares_dns_record_t * dnsrec) noexcept
+std::vector<ARecord> handleResponseARecord(const ares_dns_record_t * dnsrec) noexcept
 {
     std::vector<ARecord> result;
     const size_t count = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
     for (size_t i = 0; i < count; ++i)
     {
-        ares_dns_rr_t* rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
-        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_A) continue;
+        ares_dns_rr_t * rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
+        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_A)
+            continue;
 
         uint32_t ttl = ares_dns_rr_get_ttl(rr);
-        if (ttl > 0) ttl = std::clamp(ttl, MIN_TTL, MAX_TTL);  /// Clamp only positive cacheable TTL
+        if (ttl > 0)
+            ttl = std::clamp(ttl, MIN_TTL, MAX_TTL); /// Clamp only positive cacheable TTL
 
         const auto * addr = static_cast<const in_addr *>(ares_dns_rr_get_addr(rr, ARES_RR_A_ADDR));
-        if (!addr) continue;
+        if (!addr)
+            continue;
         result.emplace_back(ARecord{
             .ttl = ttl,
-            .ipv4_address  = *addr
+            .ipv4_address = *addr,
         });
     }
 
     return result;
 }
 
-std::vector<AAAARecord> handleResponseAAAARecord(
-    const ares_dns_record_t * dnsrec) noexcept
+std::vector<AAAARecord> handleResponseAAAARecord(const ares_dns_record_t * dnsrec) noexcept
 {
     std::vector<AAAARecord> result;
     const size_t count = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
     for (size_t i = 0; i < count; ++i)
     {
-        ares_dns_rr_t* rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
-        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_AAAA) continue;
+        ares_dns_rr_t * rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
+        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_AAAA)
+            continue;
 
         uint32_t ttl = ares_dns_rr_get_ttl(rr);
-        if (ttl > 0) ttl = std::clamp(ttl, MIN_TTL, MAX_TTL);  /// Clamp only positive cacheable TTL
+        if (ttl > 0)
+            ttl = std::clamp(ttl, MIN_TTL, MAX_TTL); /// Clamp only positive cacheable TTL
 
         const auto * addr = static_cast<const in6_addr *>(ares_dns_rr_get_addr(rr, ARES_RR_AAAA_ADDR));
-        if (!addr) continue;
+        if (!addr)
+            continue;
         result.emplace_back(AAAARecord{
             .ttl = ttl,
-            .ipv6_address = *addr
+            .ipv6_address = *addr,
         });
     }
 
     return result;
 }
 
-std::vector<PTRRecord> handleResponsePTRRecord(
-    const ares_dns_record_t * dnsrec) noexcept
+std::vector<PTRRecord> handleResponsePTRRecord(const ares_dns_record_t * dnsrec) noexcept
 {
     static_assert(
-        std::is_same_v<decltype(PTRRecord::domain_name), std::string>, 
-        "PTRRecord::domain_name must be std::string to safely copy null-terminated char * dname"
-    );
+        std::is_same_v<decltype(PTRRecord::domain_name), std::string>,
+        "PTRRecord::domain_name must be std::string to safely copy null-terminated char * dname");
 
     std::vector<PTRRecord> result;
     const size_t count = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
     for (size_t i = 0; i < count; ++i)
     {
-        ares_dns_rr_t* rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
-        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_PTR) continue;
+        ares_dns_rr_t * rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
+        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_PTR)
+            continue;
 
         uint32_t ttl = ares_dns_rr_get_ttl(rr);
-        if (ttl > 0) ttl = std::clamp(ttl, MIN_TTL, MAX_TTL);  /// Clamp only positive cacheable TTL
+        if (ttl > 0)
+            ttl = std::clamp(ttl, MIN_TTL, MAX_TTL); /// Clamp only positive cacheable TTL
 
-        const char* dname = ares_dns_rr_get_str(rr, ARES_RR_PTR_DNAME);
-        if (!dname) continue;
-
+        const char * dname = ares_dns_rr_get_str(rr, ARES_RR_PTR_DNAME);
+        if (!dname)
+            continue;
         result.emplace_back(PTRRecord{
             .ttl = ttl,
-            .domain_name = dname
+            .domain_name = dname,
         });
     }
 
     return result;
 }
 
-std::vector<SRVRecord> handleResponseSRVRecord(
-    const ares_dns_record_t * dnsrec) noexcept
+std::vector<SRVRecord> handleResponseSRVRecord(const ares_dns_record_t * dnsrec) noexcept
 {
     static_assert(
-        std::is_same_v<decltype(SRVRecord::target), std::string>, 
-        "SRVRecord::target must be std::string to safely copy null-terminated char * target"
-    );
+        std::is_same_v<decltype(SRVRecord::target), std::string>,
+        "SRVRecord::target must be std::string to safely copy null-terminated char * target");
 
     std::vector<SRVRecord> result;
     const size_t count = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
     for (size_t i = 0; i < count; ++i)
     {
-        ares_dns_rr_t *rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
-        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_SRV) continue;
+        ares_dns_rr_t * rr = ares_dns_record_get_rr(dnsrec, ARES_SECTION_ANSWER, i);
+        if (ares_dns_rr_get_type(rr) != ARES_REC_TYPE_SRV)
+            continue;
 
         uint32_t ttl = ares_dns_rr_get_ttl(rr);
-        if (ttl > 0) ttl = std::clamp(ttl, MIN_TTL, MAX_TTL); /// Clamp only positive cacheable TTL
+        if (ttl > 0)
+            ttl = std::clamp(ttl, MIN_TTL, MAX_TTL); /// Clamp only positive cacheable TTL
 
         const uint16_t priority = ares_dns_rr_get_int16(rr, ARES_RR_SRV_PRIORITY);
-        const uint16_t weight   = ares_dns_rr_get_int16(rr, ARES_RR_SRV_WEIGHT);
-        const uint16_t port     = ares_dns_rr_get_int16(rr, ARES_RR_SRV_PORT);
+        const uint16_t weight = ares_dns_rr_get_int16(rr, ARES_RR_SRV_WEIGHT);
+        const uint16_t port = ares_dns_rr_get_int16(rr, ARES_RR_SRV_PORT);
         const char * target = ares_dns_rr_get_str(rr, ARES_RR_SRV_TARGET);
-        if (!target) continue;
+        if (!target)
+            continue;
         result.emplace_back(SRVRecord{
-            .ttl        = ttl,
-            .priority   = priority,
-            .weight     = weight,
-            .port       = port,
-            .target     = target,
+            .ttl = ttl,
+            .priority = priority,
+            .weight = weight,
+            .port = port,
+            .target = target,
         });
     }
 
     return result;
 }
 
-ALWAYS_INLINE int aresQueryARecord(
-    ares_channel channel,
-    const char * name,
-    ares_callback cb,
-    void * arg)
+ALWAYS_INLINE int aresQueryARecord(ares_channel channel, const char * name, ares_callback cb, void * arg)
 {
     return ares_dns_query(channel, name, ARES_CLASS_IN, ARES_REC_TYPE_A, cb, arg, nullptr);
 }
 
-ALWAYS_INLINE int aresQueryAAAARecord(
-    ares_channel channel,
-    const char * name,
-    ares_callback cb,
-    void * arg)
+ALWAYS_INLINE int aresQueryAAAARecord(ares_channel channel, const char * name, ares_callback cb, void * arg)
 {
     return ares_dns_query(channel, name, ARES_CLASS_IN, ARES_REC_TYPE_AAAA, cb, arg, nullptr);
 }
 
-ALWAYS_INLINE int aresQueryPTRRecord(
-    ares_channel channel,
-    const char * name,
-    ares_callback cb,
-    void * arg)
+ALWAYS_INLINE int aresQueryPTRRecord(ares_channel channel, const char * name, ares_callback cb, void * arg)
 {
     unsigned char buf[16];
     int family;
 
-    if (ares_inet_pton(AF_INET, name, buf) == 1)        family = AF_INET;
-    else if (ares_inet_pton(AF_INET6, name, buf) == 1)  family = AF_INET6;
-    else throw DB::Exception(DB::ErrorCodes::INVALID_IP_ADDRESS_FORMAT, "aresQueryPTRRecord(): Invalid I.P address format: {}", name);
+    if (ares_inet_pton(AF_INET, name, buf) == 1)
+        family = AF_INET;
+    else if (ares_inet_pton(AF_INET6, name, buf) == 1)
+        family = AF_INET6;
+    else
+        throw DB::Exception(DB::ErrorCodes::INVALID_IP_ADDRESS_FORMAT, "aresQueryPTRRecord(): Invalid I.P address format: {}", name);
 
     char * dns_ptr = nullptr;
     int status = ares_dns_ptr_from_addr(family, buf, &dns_ptr);
     if (status != ARES_SUCCESS)
     {
-        if (dns_ptr) ares_free_string(dns_ptr);
-        throw DB::Exception(DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR, "aresQueryPTRRecord(): Failed to create DNS pointer from address: {}", name);
+        if (dns_ptr)
+            ares_free_string(dns_ptr);
+        throw DB::Exception(
+            DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR, "aresQueryPTRRecord(): Failed to create DNS pointer from address: {}", name);
     }
 
     int result = ares_dns_query(channel, dns_ptr, ARES_CLASS_IN, ARES_REC_TYPE_PTR, cb, arg, nullptr);
@@ -276,27 +308,17 @@ ALWAYS_INLINE int aresQueryPTRRecord(
     return result;
 }
 
-ALWAYS_INLINE int aresQuerySRVRecord(
-    ares_channel channel,
-    const char * name,
-    ares_callback cb,
-    void * arg)
+ALWAYS_INLINE int aresQuerySRVRecord(ares_channel channel, const char * name, ares_callback cb, void * arg)
 {
     return ares_dns_query(channel, name, ARES_CLASS_IN, ARES_REC_TYPE_SRV, cb, arg, nullptr);
 }
 
-template <QueryType Q, typename C> 
-ALWAYS_INLINE void query(
-    ares_channel channel,
-    const std::string& input,
-    C user_callback)
+template <QueryType Q, typename C>
+ALWAYS_INLINE void query(ares_channel channel, const std::string & input, C user_callback)
 {
     using ResultType = std::invoke_result_t<decltype(get_handler<Q>()), const ares_dns_record_t *>;
     using CallbackArgType = std::expected<ResultType, ErrorCode>;
-    static_assert(
-        std::invocable<C, CallbackArgType>,
-        "Callback C must be invokable with an argument of type CallbackArgumentType"
-    );
+    static_assert(std::invocable<C, CallbackArgType>, "Callback C must be invokable with an argument of type CallbackArgumentType");
 
     struct CallbackOnHeap
     {
@@ -306,14 +328,10 @@ ALWAYS_INLINE void query(
 
     auto query_callback = [](void * arg, int status, size_t /*timeouts*/, const ares_dns_record_t * dnsrec)
     {
-        auto heap_cb = std::unique_ptr<CallbackOnHeap>(
-            static_cast<CallbackOnHeap *>(arg)
-        );
+        auto heap_cb = std::unique_ptr<CallbackOnHeap>(static_cast<CallbackOnHeap *>(arg));
         if (status != ARES_SUCCESS) [[unlikely]]
         {
-            heap_cb->user_callback(CallbackArgType{
-                std::unexpected(ares_status_to_error_code(status))
-            });
+            heap_cb->user_callback(CallbackArgType{std::unexpected(ares_status_to_error_code(status))});
             return;
         }
 
@@ -327,20 +345,14 @@ ALWAYS_INLINE void query(
     if (status != ARES_SUCCESS) [[unlikely]]
     {
         throw DB::Exception(
-            DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR,
-            "query(): Failed to enqueue query with error: {}",
-            ares_strerror(status)
-        );
+            DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR, "query(): Failed to enqueue query with error: {}", ares_strerror(status));
     }
 
     ptr_user_callback.release();
 }
 
-template <QueryType Q> 
-ALWAYS_INLINE auto queryBlocking(
-    ares_channel channel,
-    const std::string& input,
-    const uint32_t timeout_ms)
+template <QueryType Q>
+ALWAYS_INLINE auto queryBlocking(ares_channel channel, const std::string & input, const uint32_t timeout_ms)
 {
     using ResultType = std::invoke_result_t<decltype(get_handler<Q>()), const ares_dns_record_t *>;
     using BridgeType = AsyncResult<ResultType>;
@@ -352,10 +364,8 @@ ALWAYS_INLINE auto queryBlocking(
 
     auto query_callback = [](void * arg, int status, size_t /*timeouts*/, const ares_dns_record_t * dnsrec)
     {
-        auto bridge_ptr = std::unique_ptr<std::shared_ptr<BridgeType>>(
-            static_cast<std::shared_ptr<BridgeType> *>(arg)
-        );
-        auto& bridge = **bridge_ptr;
+        auto bridge_ptr = std::unique_ptr<std::shared_ptr<BridgeType>>(static_cast<std::shared_ptr<BridgeType> *>(arg));
+        auto & bridge = **bridge_ptr;
 
         if (status != ARES_SUCCESS) [[unlikely]]
         {
@@ -375,30 +385,21 @@ ALWAYS_INLINE auto queryBlocking(
     if (status != ARES_SUCCESS) [[unlikely]]
     {
         throw DB::Exception(
-            DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR,
-            "queryBlocking(): Failed to enqueue query with error: {}",
-            ares_strerror(status)
-        );
+            DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR, "queryBlocking(): Failed to enqueue query with error: {}", ares_strerror(status));
     }
 
     bridge_ptr_callback.release();
 
     if (bridge_ptr_shared->sem.try_acquire_for(std::chrono::milliseconds(timeout_ms)))
     {
-        auto& res = bridge_ptr_shared->result;
+        auto & res = bridge_ptr_shared->result;
         if (res)
         {
             return std::move(*res);
         }
-        else
-        {
-            std::string_view error_name = magic_enum::enum_name(res.error());
-            throw DB::Exception(
-                DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR,
-                "queryBlocking(): Ares query failed with error: {}",
-                error_name
-            );
-        }
+
+        std::string_view error_name = magic_enum::enum_name(res.error());
+        throw DB::Exception(DB::ErrorCodes::EXTERNAL_LIBRARY_ERROR, "queryBlocking(): Ares query failed with error: {}", error_name);
     }
 
     throw DB::Exception(DB::ErrorCodes::TIMEOUT_EXCEEDED, "queryBlocking(): Failed due to user-defined timeout");
@@ -406,15 +407,16 @@ ALWAYS_INLINE auto queryBlocking(
 
 }
 
-namespace DB {
+namespace DB
+{
 
-using ::AsyncAresExecutor::ARecordsCallback;
 using ::AsyncAresExecutor::AAAARecordsCallback;
+using ::AsyncAresExecutor::ARecordsCallback;
 using ::AsyncAresExecutor::PTRRecordsCallback;
 using ::AsyncAresExecutor::SRVRecordsCallback;
 
 /// Public methods
-AsyncAresExecutor& AsyncAresExecutor::instance()
+AsyncAresExecutor & AsyncAresExecutor::instance()
 {
     static AsyncAresExecutor instance;
     return instance;
@@ -432,59 +434,43 @@ void AsyncAresExecutor::shutdown()
     }
 }
 
-void AsyncAresExecutor::queryARecords(
-    const std::string& domain_name,
-    ARecordsCallback user_callback)
+void AsyncAresExecutor::queryARecords(const std::string & domain_name, ARecordsCallback user_callback)
 {
     query<QueryType::A_RECORD>(this->channel, domain_name, user_callback);
 }
 
-void AsyncAresExecutor::queryAAAARecords(
-    const std::string& domain_name,
-    AAAARecordsCallback user_callback)
+void AsyncAresExecutor::queryAAAARecords(const std::string & domain_name, AAAARecordsCallback user_callback)
 {
     query<QueryType::AAAA_RECORD>(this->channel, domain_name, user_callback);
 }
 
-void AsyncAresExecutor::queryPTRRecords(
-    const std::string& ip_address,
-    PTRRecordsCallback user_callback)
+void AsyncAresExecutor::queryPTRRecords(const std::string & ip_address, PTRRecordsCallback user_callback)
 {
     query<QueryType::PTR_RECORD>(this->channel, ip_address, user_callback);
 }
 
-void AsyncAresExecutor::querySRVRecords(
-    const std::string& service_id,
-    SRVRecordsCallback user_callback)
+void AsyncAresExecutor::querySRVRecords(const std::string & service_id, SRVRecordsCallback user_callback)
 {
     query<QueryType::SRV_RECORD>(this->channel, service_id, user_callback);
 }
 
 
-std::vector<ARecord> AsyncAresExecutor::queryARecordsBlocking(
-    const string& domain_name,
-    const uint32_t timeout_ms)
+std::vector<ARecord> AsyncAresExecutor::queryARecordsBlocking(const string & domain_name, const uint32_t timeout_ms)
 {
     return queryBlocking<QueryType::A_RECORD>(this->channel, domain_name, timeout_ms);
 }
 
-std::vector<AAAARecord> AsyncAresExecutor::queryAAAARecordsBlocking(
-    const string& domain_name,
-    const uint32_t timeout_ms)
+std::vector<AAAARecord> AsyncAresExecutor::queryAAAARecordsBlocking(const string & domain_name, const uint32_t timeout_ms)
 {
     return queryBlocking<QueryType::AAAA_RECORD>(this->channel, domain_name, timeout_ms);
 }
 
-std::vector<PTRRecord> AsyncAresExecutor::queryPTRRecordsBlocking(
-    const string& ip_address,
-    const uint32_t timeout_ms)
+std::vector<PTRRecord> AsyncAresExecutor::queryPTRRecordsBlocking(const string & ip_address, const uint32_t timeout_ms)
 {
     return queryBlocking<QueryType::PTR_RECORD>(this->channel, ip_address, timeout_ms);
 }
 
-std::vector<SRVRecord> AsyncAresExecutor::querySRVRecordsBlocking(
-    const string& service_id,
-    const uint32_t timeout_ms)
+std::vector<SRVRecord> AsyncAresExecutor::querySRVRecordsBlocking(const string & service_id, const uint32_t timeout_ms)
 {
     return queryBlocking<QueryType::SRV_RECORD>(this->channel, service_id, timeout_ms);
 }
@@ -498,12 +484,14 @@ AsyncAresExecutor::AsyncAresExecutor()
     if (ares_library_init(ARES_LIB_INIT_ALL) != ARES_SUCCESS)
         throw Exception(ErrorCodes::EXTERNAL_LIBRARY_ERROR, "AsyncAresExecutor(): Failed to initialize the c-ares library");
 
-    struct ares_options options {};
+    struct ares_options options
+    {
+    };
 
     /// Better performance with reusing sockets
     /// As long as we use few channels (<100), this is OK and will not hit FD limits
-    options.flags = ARES_FLAG_STAYOPEN; 
-    
+    options.flags = ARES_FLAG_STAYOPEN;
+
     /// Enable internal event thread, which makes c-ares spawn its own thread
     /// Simplifies design: No mutexes, no global thread
     int optmask = ARES_OPT_FLAGS | ARES_OPT_EVENT_THREAD;

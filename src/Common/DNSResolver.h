@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into NewDNSResolver
+
 #pragma once
 #include <Poco/Net/IPAddress.h>
 #include <Poco/Net/SocketAddress.h>
@@ -7,16 +9,12 @@
 #include <boost/noncopyable.hpp>
 #include <Common/LoggingFormatStringHelpers.h>
 
+
+namespace Poco { class Logger; }
+
 namespace DB
 {
 
-/**
- * @brief A purely static utility class to manage the global state of the c-ares library.
- *
- * This class ensures that the c-ares library is initialized exactly once per process
- * in a thread-safe manner. It also registers a cleanup function to be called at
- * normal program termination.
- */
 /// A singleton implementing DNS names resolving with optional DNS cache
 /// The cache is being updated asynchronous in separate thread (see DNSCacheUpdater)
 /// or it could be updated manually via drop() method.

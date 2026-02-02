@@ -5,7 +5,7 @@
 namespace DB
 {
 
-#define THREAD_NAME_VALUES(M)\
+#define THREAD_NAME_VALUES(M) \
     M(AGGREGATED_ZOOKEEPER_LOG, "AggrZooLog") \
     M(AGGREGATOR_DESTRUCTION, "AggregDestruct") \
     M(AGGREGATOR_POOL, "AggregatorPool") \
@@ -43,6 +43,7 @@ namespace DB
     M(DATABASE_BACKUP, "DatabaseBackup") \
     M(DATABASE_ON_DISK, "DatabaseOnDisk") \
     M(DATABASE_REPLICAS, "DBReplicas") \
+    M(DNS_CACHE_UPDATER, "DNSCacheUpdater") \
     M(DATALAKE_REST_CATALOG, "RestCatalog") \
     M(DATALAKE_TABLE_SNAPSHOT, "TableSnapshot") \
     M(DDL_WORKER, "DDLWorker") \
@@ -155,16 +156,16 @@ namespace DB
     M(WORKLOAD_RESOURCE_MANAGER, "WorkloadResMgr") \
     M(ZOOKEEPER_ACL_WATCHER, "ZooACLWatch") \
     M(ZOOKEEPER_RECV, "ZooKeeperRecv") \
-    M(ZOOKEEPER_SEND, "ZooKeeperSend") \
+    M(ZOOKEEPER_SEND, "ZooKeeperSend")
 
 
 enum class ThreadName : uint8_t
 {
     UNKNOWN = 0,
 
-    #define THREAD_NAME_ACTION(NAME, STR) NAME,
+#define THREAD_NAME_ACTION(NAME, STR) NAME,
     THREAD_NAME_VALUES(THREAD_NAME_ACTION)
-    #undef THREAD_NAME_ACTION
+#undef THREAD_NAME_ACTION
 };
 
 

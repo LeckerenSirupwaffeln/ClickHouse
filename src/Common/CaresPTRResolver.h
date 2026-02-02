@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into NewDNSResolver
+
 #pragma once
 
 #include <Common/DNSPTRResolver.h>

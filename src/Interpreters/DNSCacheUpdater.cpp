@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into DNSResolver
+
 #include <Interpreters/DNSCacheUpdater.h>
 
 #include <Interpreters/Context.h>

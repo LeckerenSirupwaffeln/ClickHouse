@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into NewDNSResolver
+
 #include <Common/CaresPTRResolver.h>
 #include <Common/Exception.h>
 #include <Common/logger_useful.h>

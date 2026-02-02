@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into NewDNSResolver
+
 #include <Common/DNSPTRResolverProvider.h>
 #include <Common/CaresPTRResolver.h>
 

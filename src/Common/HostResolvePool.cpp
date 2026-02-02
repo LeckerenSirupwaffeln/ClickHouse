@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into NewDNSResolver
+
 #include <Common/HostResolvePool.h>
 
 #include <Common/DNSResolver.h>

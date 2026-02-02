@@ -1,3 +1,5 @@
+/// USERTODO: Refactor this into NewDNSResolver
+
 #include <Common/DNSResolver.h>
 #include <Common/CacheBase.h>
 #include <Common/Exception.h>
